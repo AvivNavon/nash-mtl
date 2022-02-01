@@ -1,0 +1,8 @@
+matplotlib>=3.2.1
+numpy>=1.18.2
+torch>=1.4.0
+torchvision>=0.8.0
+cvxpy
+tqdm>=4.45.0
+pandas
+scikit-learn
