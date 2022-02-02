@@ -7,13 +7,13 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+from experiments.toy.problem import Toy
 from experiments.toy.utils import plot_2d_pareto
 from experiments.utils import (
     common_parser,
     extract_weight_method_parameters_from_args,
     set_logger,
 )
-from experiments.toy.problem import Toy
 from methods.weight_methods import WeightMethods
 
 set_logger()
@@ -63,7 +63,7 @@ def main(method_type, device, n_iter, scale):
             f = F(x, False)
             _ = method.backward(
                 losses=f,
-                shared_parameters=(x, ),
+                shared_parameters=(x,),
                 task_specific_parameters=None,
                 last_shared_parameters=None,
                 representation=None,
@@ -76,13 +76,13 @@ def main(method_type, device, n_iter, scale):
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser("Toy example (modification of the one in CAGrad)", parents=[common_parser])
-    parser.set_defaults(
-        n_epochs=35000,
-        method="nashmtl",
-        data_path=None
+    parser = ArgumentParser(
+        "Toy example (modification of the one in CAGrad)", parents=[common_parser]
     )
-    parser.add_argument("--scale", default=1e-1, type=float, help="scale for first loss")
+    parser.set_defaults(n_epochs=35000, method="nashmtl", data_path=None)
+    parser.add_argument(
+        "--scale", default=1e-1, type=float, help="scale for first loss"
+    )
     parser.add_argument("--out-path", default="outputs", type=Path, help="output path")
     args = parser.parse_args()
 
@@ -92,15 +92,23 @@ if __name__ == "__main__":
 
     device = torch.device("cpu")
     all_traj = main(
-        method_type=args.method,
-        device=device,
-        n_iter=args.n_epochs,
-        scale=args.scale
+        method_type=args.method, device=device, n_iter=args.n_epochs, scale=args.scale
     )
 
     # plot
     ax, fig, legend = plot_2d_pareto(trajectories=all_traj, scale=args.scale)
 
-    title_map = {'nashmtl': 'Nash-MTL', 'cagrad': 'CAGrad', 'mgda': 'MGDA', 'pcgrad': 'PCGrad', 'ls': 'LS'}
+    title_map = {
+        "nashmtl": "Nash-MTL",
+        "cagrad": "CAGrad",
+        "mgda": "MGDA",
+        "pcgrad": "PCGrad",
+        "ls": "LS",
+    }
     ax.set_title(title_map[args.method], fontsize=25)
-    plt.savefig(out_path / f"{args.method}.png", bbox_extra_artists=(legend, ), bbox_inches='tight', facecolor='white')
+    plt.savefig(
+        out_path / f"{args.method}.png",
+        bbox_extra_artists=(legend,),
+        bbox_inches="tight",
+        facecolor="white",
+    )
