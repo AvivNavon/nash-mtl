@@ -1,14 +1,12 @@
 import copy
-import logging
 import random
 from abc import abstractmethod
-from typing import Any, Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import cvxpy as cp
 import numpy as np
 import torch
-import torch.nn.functional as F
-from scipy.optimize import Bounds, minimize, minimize_scalar
+from scipy.optimize import minimize
 
 from methods.min_norm_solvers import MinNormSolver, gradient_normalizers
 
@@ -61,7 +59,7 @@ class WeightMethod:
 
         Returns
         -------
-        Loss, task weights
+        Loss, extra outputs
         """
         loss, extra_outputs = self.get_weighted_loss(
             losses=losses,
@@ -102,7 +100,6 @@ class NashMTL(WeightMethod):
         self,
         n_tasks: int,
         device: torch.device,
-        params="shared",
         max_norm: float = 1.0,
         update_weights_every: int = 1,
         optim_niter=20,
@@ -114,7 +111,6 @@ class NashMTL(WeightMethod):
 
         self.optim_niter = optim_niter
         self.update_weights_every = update_weights_every
-        self.params = params
         self.max_norm = max_norm
 
         self.prvs_alpha_param = None
@@ -194,8 +190,6 @@ class NashMTL(WeightMethod):
         self,
         losses,
         shared_parameters,
-        last_shared_parameters,
-        representation,
         **kwargs,
     ):
         """
@@ -204,8 +198,6 @@ class NashMTL(WeightMethod):
         ----------
         losses :
         shared_parameters : shared parameters
-        last_shared_parameters : parameters of last shared layer
-        representation :
         kwargs :
 
         Returns
@@ -221,16 +213,11 @@ class NashMTL(WeightMethod):
             self.step += 1
 
             grads = {}
-            params = dict(
-                rep=representation,
-                shared=shared_parameters,
-                last=last_shared_parameters,
-            )[self.params]
             for i, loss in enumerate(losses):
                 g = list(
                     torch.autograd.grad(
                         loss,
-                        params,
+                        shared_parameters,
                         retain_graph=True,
                     )
                 )
@@ -270,32 +257,14 @@ class NashMTL(WeightMethod):
         representation: Union[List[torch.nn.parameter.Parameter], torch.Tensor] = None,
         **kwargs,
     ) -> Tuple[Union[torch.Tensor, None], Union[Dict, None]]:
-        """
-
-        Parameters
-        ----------
-        losses :
-        shared_parameters :
-        task_specific_parameters :
-        last_shared_parameters : parameters of last shared layer/block
-        representation : shared representation
-        kwargs :
-
-        Returns
-        -------
-        Loss, task weights
-        """
         loss, extra_outputs = self.get_weighted_loss(
             losses=losses,
             shared_parameters=shared_parameters,
-            task_specific_parameters=task_specific_parameters,
-            last_shared_parameters=last_shared_parameters,
-            representation=representation,
             **kwargs,
         )
         loss.backward()
 
-        # NOTE: make sure the solution has norm <= self.eps
+        # make sure the solution for shared params has norm <= self.eps
         if self.max_norm > 0:
             torch.nn.utils.clip_grad_norm_(shared_parameters, self.max_norm)
 
