@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple, Union
 import cvxpy as cp
 import numpy as np
 import torch
+import torch.nn.functional as F
 from scipy.optimize import minimize
 
 from methods.min_norm_solvers import MinNormSolver, gradient_normalizers
@@ -653,6 +654,142 @@ class CAGrad(WeightMethod):
         return None, {}  # NOTE: to align with all other weight methods
 
 
+class RLW(WeightMethod):
+    """Random loss weighting: https://arxiv.org/pdf/2111.10603.pdf"""
+
+    def __init__(self, n_tasks, device: torch.device):
+        super().__init__(n_tasks, device=device)
+
+    def get_weighted_loss(self, losses: torch.Tensor, **kwargs):
+        assert len(losses) == self.n_tasks
+        weight = (F.softmax(torch.randn(self.n_tasks), dim=-1)).to(self.device)
+        loss = torch.sum(losses * weight)
+
+        return loss, dict(weights=weight)
+
+
+class IMTLG(WeightMethod):
+    """TOWARDS IMPARTIAL MULTI-TASK LEARNING: https://openreview.net/pdf?id=IMPnRXEWpvr"""
+
+    def __init__(self, n_tasks, device: torch.device):
+        super().__init__(n_tasks, device=device)
+
+    def get_weighted_loss(
+        self,
+        losses,
+        shared_parameters,
+        **kwargs,
+    ):
+        grads = {}
+        norm_grads = {}
+
+        for i, loss in enumerate(losses):
+            g = list(
+                torch.autograd.grad(
+                    loss,
+                    shared_parameters,
+                    retain_graph=True,
+                )
+            )
+            grad = torch.cat([torch.flatten(grad) for grad in g])
+            norm_term = torch.norm(grad)
+
+            grads[i] = grad
+            norm_grads[i] = grad / norm_term
+
+        G = torch.stack(tuple(v for v in grads.values()))
+        D = (
+            G[
+                0,
+            ]
+            - G[
+                1:,
+            ]
+        )
+
+        U = torch.stack(tuple(v for v in norm_grads.values()))
+        U = (
+            U[
+                0,
+            ]
+            - U[
+                1:,
+            ]
+        )
+        first_element = torch.matmul(
+            G[
+                0,
+            ],
+            U.t(),
+        )
+        try:
+            second_element = torch.inverse(torch.matmul(D, U.t()))
+        except:
+            # workaround for cases where matrix is singular
+            second_element = torch.inverse(
+                torch.eye(self.n_tasks - 1, device=self.device) * 1e-8
+                + torch.matmul(D, U.t())
+            )
+
+        alpha_ = torch.matmul(first_element, second_element)
+        alpha = torch.cat(
+            (torch.tensor(1 - alpha_.sum(), device=self.device).unsqueeze(-1), alpha_)
+        )
+
+        loss = torch.sum(losses * alpha)
+
+        return loss, dict(weights=alpha)
+
+
+class DynamicWeightAverage(WeightMethod):
+    """Dynamic Weight Average from `End-to-End Multi-Task Learning with Attention`.
+    Modification of: https://github.com/lorenmt/mtan/blob/master/im2im_pred/model_segnet_split.py#L242
+    """
+
+    def __init__(
+        self, n_tasks, device: torch.device, iteration_window: int = 25, temp=2.0
+    ):
+        """
+
+        Parameters
+        ----------
+        n_tasks :
+        iteration_window : 'iteration' loss is averaged over the last 'iteration_window' losses
+        temp :
+        """
+        super().__init__(n_tasks, device=device)
+        self.iteration_window = iteration_window
+        self.temp = temp
+        self.running_iterations = 0
+        self.costs = np.ones((iteration_window * 2, n_tasks), dtype=np.float32)
+        self.weights = np.ones(n_tasks, dtype=np.float32)
+
+    def get_weighted_loss(self, losses, **kwargs):
+
+        cost = losses.detach().cpu().numpy()
+
+        # update costs - fifo
+        self.costs[:-1, :] = self.costs[1:, :]
+        self.costs[-1, :] = cost
+
+        if self.running_iterations > self.iteration_window:
+            ws = self.costs[self.iteration_window :, :].mean(0) / self.costs[
+                : self.iteration_window, :
+            ].mean(0)
+            self.weights = (self.n_tasks * np.exp(ws / self.temp)) / (
+                np.exp(ws / self.temp)
+            ).sum()
+
+        task_weights = torch.from_numpy(self.weights.astype(np.float32)).to(
+            losses.device
+        )
+        loss = (task_weights * losses).mean()
+
+        self.running_iterations += 1
+
+        return loss, dict(weights=task_weights)
+
+
 class WeightMethods:
     def __init__(self, method: str, n_tasks: int, device: torch.device, **kwargs):
         """
@@ -686,4 +823,7 @@ METHODS = dict(
     cagrad=CAGrad,
     nashmtl=NashMTL,
     scaleinvls=ScaleInvariantLinearScalarization,
+    rlw=RLW,
+    imtl=IMTLG,
+    dwa=DynamicWeightAverage,
 )
