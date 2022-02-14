@@ -25,10 +25,13 @@ pip install -e .
 
 ## Run experiment
 
+To run experiments:
+
 ```bash
 cd experiment/<expirimnet name>
 python trainer.py --method=nashmtl
 ```
+Follow instruction on the experiment README file for more information regarding, e.g., datasets.  
 
 Here `<experiment name>` is one of `[toy, quantum_chemistry, nyuv2]`. You can also replace `nashmtl` with on of the following MTL methods.
 

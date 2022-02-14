@@ -213,7 +213,7 @@ def main(path, lr, bs, device):
 if __name__ == "__main__":
     parser = ArgumentParser("NYUv2", parents=[common_parser])
     parser.set_defaults(
-        data_path="/cortex/data/images/NYUv2/nyuv2",
+        data_path="dataset",
         lr=1e-4,
         n_epochs=200,
         batch_size=2,
