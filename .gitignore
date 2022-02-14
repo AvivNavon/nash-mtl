@@ -130,6 +130,6 @@ dmypy.json
 .DS_Store
 .idea/
 wandb/
-dataset/
+datasets/
 outputs/
 data/
