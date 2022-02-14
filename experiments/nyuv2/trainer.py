@@ -193,20 +193,22 @@ def main(path, lr, bs, device):
             avg_cost[epoch, 13:15] = conf_mat.get_metrics()
 
             # Test Delta_m
-            delta_m = delta_fn(avg_cost[epoch, [13, 14, 16, 17, 19, 20, 21, 22, 23]])
+            test_delta_m = delta_fn(
+                avg_cost[epoch, [13, 14, 16, 17, 19, 20, 21, 22, 23]]
+            )
 
             # print results
             print(
                 f"LOSS FORMAT: SEMANTIC_LOSS MEAN_IOU PIX_ACC | DEPTH_LOSS ABS_ERR REL_ERR "
-                f"| NORMAL_LOSS MEAN MED <11.25 <22.5 <30 | ∆m"
+                f"| NORMAL_LOSS MEAN MED <11.25 <22.5 <30 | ∆m (test)"
             )
             print(
                 f"Epoch: {epoch:04d} | TRAIN: {avg_cost[epoch, 0]:.4f} {avg_cost[epoch, 1]:.4f} {avg_cost[epoch, 2]:.4f} "
                 f"| {avg_cost[epoch, 3]:.4f} {avg_cost[epoch, 4]:.4f} {avg_cost[epoch, 5]:.4f} | {avg_cost[epoch, 6]:.4f} "
-                f"{avg_cost[epoch, 7]:.4f} {avg_cost[epoch, 8]:.4f} {avg_cost[epoch, 9]:.4f} {avg_cost[epoch, 10]:.4f} {avg_cost[epoch, 11]:.4f} ||"
+                f"{avg_cost[epoch, 7]:.4f} {avg_cost[epoch, 8]:.4f} {avg_cost[epoch, 9]:.4f} {avg_cost[epoch, 10]:.4f} {avg_cost[epoch, 11]:.4f} || "
                 f"TEST: {avg_cost[epoch, 12]:.4f} {avg_cost[epoch, 13]:.4f} {avg_cost[epoch, 14]:.4f} | "
                 f"{avg_cost[epoch, 15]:.4f} {avg_cost[epoch, 16]:.4f} {avg_cost[epoch, 17]:.4f} | {avg_cost[epoch, 18]:.4f} "
-                f"{avg_cost[epoch, 19]:.4f} {avg_cost[epoch, 20]:.4f} {avg_cost[epoch, 21]:.4f} {avg_cost[epoch, 22]:.4f} {avg_cost[epoch, 23]:.4f} | {delta_m:.3f}"
+                f"{avg_cost[epoch, 19]:.4f} {avg_cost[epoch, 20]:.4f} {avg_cost[epoch, 21]:.4f} {avg_cost[epoch, 22]:.4f} {avg_cost[epoch, 23]:.4f} | {test_delta_m:.3f}"
             )
 
 
