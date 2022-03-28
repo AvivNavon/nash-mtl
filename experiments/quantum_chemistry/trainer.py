@@ -95,13 +95,13 @@ def main(
         dataset.data.y[:, targets] = (dataset.data.y[:, targets] - mean) / std
 
     test_loader = DataLoader(
-        test_dataset, batch_size=batch_size, shuffle=False, num_workers=4
+        test_dataset, batch_size=batch_size, shuffle=False, num_workers=0
     )
     val_loader = DataLoader(
-        val_dataset, batch_size=batch_size, shuffle=False, num_workers=4
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=0
     )
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=0
     )
 
     weight_method = WeightMethods(
