@@ -7,6 +7,7 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 from tqdm import trange
+import wandb
 
 from experiments.quantum_chemistry.models import Net
 from experiments.quantum_chemistry.utils import (
@@ -149,8 +150,11 @@ def main(
                 last_shared_parameters=list(model.last_shared_parameters()),
                 representation=features,
             )
+            train_loss += loss
 
             optimizer.step()
+        
+        
 
         val_loss_dict = evaluate(model, val_loader, std=std, scale_target=scale_target)
         test_loss_dict = evaluate(
@@ -178,6 +182,15 @@ def main(
             f"epoch {epoch} | lr={lr} | train loss {losses.mean().item():.3f} | val loss: {val_loss:.3f} | "
             f"test loss: {test_loss:.3f} | best test loss {best_test:.3f} | best_test_delta {best_test_delta:.3f}"
         )
+        
+        wandb.log({"Learning Rate": lr}, step=epoch)
+        wandb.log({"Train Loss": losses.mean().item()}, step=epoch)
+        wandb.log({"Val Loss": val_loss}, step=epoch)
+        wandb.log({"Val Delta": val_delta}, step=epoch)
+        wandb.log({"Test Loss": test_loss}, step=epoch)
+        wandb.log({"Test Delta": test_delta}, step=epoch)
+        wandb.log({"Best Test Loss": best_test}, step=epoch)
+        wandb.log({"Best Test Delta": best_test_delta}, step=epoch)
 
         scheduler.step(
             val_loss_dict["avg_task_losses"][main_task]
@@ -196,10 +209,15 @@ if __name__ == "__main__":
         method="nashmtl",
     )
     parser.add_argument("--scale-y", default=True, type=str2bool)
+    parser.add_argument("--wandb_project", type=str, default=None, help="Name of Weights & Biases Project.")
+    parser.add_argument("--wandb_entity", type=str, default=None, help="Name of Weights & Biases Entity.")
     args = parser.parse_args()
 
     # set seed
     set_seed(args.seed)
+
+    if args.wandb_project is not None:
+        wandb.init(project=args.wandb_project, entity=args.wandb_entity, config=args)
 
     weight_method_params = extract_weight_method_parameters_from_args(args)
 
@@ -217,3 +235,6 @@ if __name__ == "__main__":
         scale_target=args.scale_y,
         main_task=args.main_task,
     )
+
+    if wandb.run is not None:
+        wandb.finish()
