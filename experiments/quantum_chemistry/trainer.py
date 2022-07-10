@@ -150,7 +150,6 @@ def main(
                 last_shared_parameters=list(model.last_shared_parameters()),
                 representation=features,
             )
-            train_loss += loss
 
             optimizer.step()
         
@@ -182,7 +181,7 @@ def main(
             f"epoch {epoch} | lr={lr} | train loss {losses.mean().item():.3f} | val loss: {val_loss:.3f} | "
             f"test loss: {test_loss:.3f} | best test loss {best_test:.3f} | best_test_delta {best_test_delta:.3f}"
         )
-        
+
         wandb.log({"Learning Rate": lr}, step=epoch)
         wandb.log({"Train Loss": losses.mean().item()}, step=epoch)
         wandb.log({"Val Loss": val_loss}, step=epoch)
