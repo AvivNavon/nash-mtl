@@ -35,6 +35,12 @@ Follow instruction on the experiment README file for more information regarding,
 
 Here `<experiment name>` is one of `[toy, quantum_chemistry, nyuv2]`. You can also replace `nashmtl` with on of the following MTL methods.
 
+We also support experiment tracking with **[Weights & Biases](https://wandb.ai/site)** with two additional parameters:
+
+```bash
+python trainer.py --method=nashmtl --wandb_project=<project-name> --wandb_entity=<entity-name>
+```
+
 ## MTL methods
 
 We support the following MTL methods with a unified API. To run experiment with MTL method `X` simply run:

@@ -1,3 +1,4 @@
+import wandb
 import logging
 from argparse import ArgumentParser
 from pathlib import Path
@@ -84,7 +85,12 @@ if __name__ == "__main__":
         "--scale", default=1e-1, type=float, help="scale for first loss"
     )
     parser.add_argument("--out-path", default="outputs", type=Path, help="output path")
+    parser.add_argument("--wandb_project", type=str, default=None, help="Name of Weights & Biases Project.")
+    parser.add_argument("--wandb_entity", type=str, default=None, help="Name of Weights & Biases Entity.")
     args = parser.parse_args()
+
+    if args.wandb_project is not None:
+        wandb.init(project=args.wandb_project, entity=args.wandb_entity, config=args)
 
     out_path = args.out_path
     out_path.mkdir(parents=True, exist_ok=True)
@@ -112,3 +118,7 @@ if __name__ == "__main__":
         bbox_inches="tight",
         facecolor="white",
     )
+
+    if wandb.run is not None:
+        wandb.log({"Pareto Front": plt})
+        wandb.finish()
