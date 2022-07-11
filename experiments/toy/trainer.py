@@ -118,7 +118,9 @@ if __name__ == "__main__":
         bbox_inches="tight",
         facecolor="white",
     )
+    plt.close()
 
     if wandb.run is not None:
-        wandb.log({"Pareto Front": plt})
+        wandb.log({"Pareto Front": wandb.Image((out_path / f"{args.method}.png").as_posix())})
+
         wandb.finish()
