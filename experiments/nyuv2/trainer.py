@@ -1,4 +1,5 @@
 import logging
+import wandb
 from argparse import ArgumentParser
 
 import numpy as np
@@ -212,6 +213,34 @@ def main(path, lr, bs, device):
                 f"| {test_delta_m:.3f}"
             )
 
+            if wandb.run is not None:
+                wandb.log({"Train Semantic Loss": avg_cost[epoch, 0]}, step=epoch)
+                wandb.log({"Train Mean IoU": avg_cost[epoch, 1]}, step=epoch)
+                wandb.log({"Train Pixel Accuracy": avg_cost[epoch, 2]}, step=epoch)
+                wandb.log({"Train Depth Loss": avg_cost[epoch, 3]}, step=epoch)
+                wandb.log({"Train Absolute Error": avg_cost[epoch, 4]}, step=epoch)
+                wandb.log({"Train Relative Error": avg_cost[epoch, 5]}, step=epoch)
+                wandb.log({"Train Normal Loss": avg_cost[epoch, 6]}, step=epoch)
+                wandb.log({"Train Loss Mean": avg_cost[epoch, 7]}, step=epoch)
+                wandb.log({"Train Loss Med": avg_cost[epoch, 8]}, step=epoch)
+                wandb.log({"Train Loss <11.25": avg_cost[epoch, 9]}, step=epoch)
+                wandb.log({"Train Loss <22.5": avg_cost[epoch, 10]}, step=epoch)
+                wandb.log({"Train Loss <30": avg_cost[epoch, 11]}, step=epoch)
+
+                wandb.log({"Test Semantic Loss": avg_cost[epoch, 12]}, step=epoch)
+                wandb.log({"Test Mean IoU": avg_cost[epoch, 13]}, step=epoch)
+                wandb.log({"Test Pixel Accuracy": avg_cost[epoch, 14]}, step=epoch)
+                wandb.log({"Test Depth Loss": avg_cost[epoch, 15]}, step=epoch)
+                wandb.log({"Test Absolute Error": avg_cost[epoch, 16]}, step=epoch)
+                wandb.log({"Test Relative Error": avg_cost[epoch, 17]}, step=epoch)
+                wandb.log({"Test Normal Loss": avg_cost[epoch, 18]}, step=epoch)
+                wandb.log({"Test Loss Mean": avg_cost[epoch, 19]}, step=epoch)
+                wandb.log({"Test Loss Med": avg_cost[epoch, 20]}, step=epoch)
+                wandb.log({"Test Loss <11.25": avg_cost[epoch, 21]}, step=epoch)
+                wandb.log({"Test Loss <22.5": avg_cost[epoch, 22]}, step=epoch)
+                wandb.log({"Test Loss <30": avg_cost[epoch, 23]}, step=epoch)
+                wandb.log({"Test ∆m": test_delta_m}, step=epoch)
+
 
 if __name__ == "__main__":
     parser = ArgumentParser("NYUv2", parents=[common_parser])
@@ -231,10 +260,18 @@ if __name__ == "__main__":
     parser.add_argument(
         "--apply-augmentation", type=str2bool, default=True, help="data augmentations"
     )
+    parser.add_argument("--wandb_project", type=str, default=None, help="Name of Weights & Biases Project.")
+    parser.add_argument("--wandb_entity", type=str, default=None, help="Name of Weights & Biases Entity.")
     args = parser.parse_args()
 
     # set seed
     set_seed(args.seed)
 
+    if args.wandb_project is not None:
+        wandb.init(project=args.wandb_project, entity=args.wandb_entity, config=args)
+
     device = get_device(gpus=args.gpu)
     main(path=args.data_path, lr=args.lr, bs=args.batch_size, device=device)
+
+    if wandb.run is not None:
+        wandb.finish()
