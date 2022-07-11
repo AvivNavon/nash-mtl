@@ -182,14 +182,15 @@ def main(
             f"test loss: {test_loss:.3f} | best test loss {best_test:.3f} | best_test_delta {best_test_delta:.3f}"
         )
 
-        wandb.log({"Learning Rate": lr}, step=epoch)
-        wandb.log({"Train Loss": losses.mean().item()}, step=epoch)
-        wandb.log({"Val Loss": val_loss}, step=epoch)
-        wandb.log({"Val Delta": val_delta}, step=epoch)
-        wandb.log({"Test Loss": test_loss}, step=epoch)
-        wandb.log({"Test Delta": test_delta}, step=epoch)
-        wandb.log({"Best Test Loss": best_test}, step=epoch)
-        wandb.log({"Best Test Delta": best_test_delta}, step=epoch)
+        if wandb.run is not None:
+            wandb.log({"Learning Rate": lr}, step=epoch)
+            wandb.log({"Train Loss": losses.mean().item()}, step=epoch)
+            wandb.log({"Val Loss": val_loss}, step=epoch)
+            wandb.log({"Val Delta": val_delta}, step=epoch)
+            wandb.log({"Test Loss": test_loss}, step=epoch)
+            wandb.log({"Test Delta": test_delta}, step=epoch)
+            wandb.log({"Best Test Loss": best_test}, step=epoch)
+            wandb.log({"Best Test Delta": best_test_delta}, step=epoch)
 
         scheduler.step(
             val_loss_dict["avg_task_losses"][main_task]
