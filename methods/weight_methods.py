@@ -561,7 +561,7 @@ class CAGrad(WeightMethod):
         grads = torch.Tensor(sum(grad_dims), self.n_tasks).to(self.device)
 
         for i in range(self.n_tasks):
-            if i < self.n_tasks:
+            if i < (self.n_tasks - 1):
                 losses[i].backward(retain_graph=True)
             else:
                 losses[i].backward()
