@@ -28,7 +28,7 @@ pip install -e .
 To run experiments:
 
 ```bash
-cd experiment/<experiment name>
+cd experiments/<experiment name>
 python trainer.py --method=nashmtl
 ```
 Follow instruction on the experiment README file for more information regarding, e.g., datasets.  
