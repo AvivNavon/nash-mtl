@@ -7,5 +7,5 @@ tqdm>=4.45.0
 pandas
 scikit-learn
 seaborn
-wandb==0.12.21
+wandb
 plotly
